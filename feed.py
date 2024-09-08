@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
+#!/home/jsled/asynchronous.org/feeds/v-achewood/bin/python3
 
 from dataclasses import dataclass
 import datetime
 from enum import Enum
 from feedgen.feed import FeedGenerator as AtomGenerator
+import logging
 import os
+import textwrap
+import time
 from urllib.parse import urlparse, parse_qs
 
 # TODO: add "days-since-original" and "percentage" to the feed body
@@ -110,9 +114,12 @@ class CgiSupport:
         pass
 
     def exists(self, param_name:str):
-        query_params = parse_qs(os.environ['QUERY_STRING'])
-        print(f'keys: {query_params.keys()=}')
-        return param_name in query_params.keys()
+        try:
+            query_params = parse_qs(os.environ['QUERY_STRING'])
+            logging.debug(f'keys: {query_params.keys()=}')
+            return param_name in query_params.keys()
+        except KeyError as no_such_key:
+            return False
 
     def get(self, param_name:str):
         query_params = parse_qs(os.environ['QUERY_STRING'])
@@ -124,7 +131,7 @@ cgi = CgiSupport()
 class FeedGenerator:
     def __init__(self):
         with open('achewood.index', 'r') as f:
-            reader = FeedIndexReader(f.readlines())
+            reader = FeedIndexReader([l.strip() for l in f.readlines()])
             self._posts = reader.posts
         if not cgi.exists(Params.start_as_of_date.param_name):
             raise Exception('400: no start_as_of_date param')
@@ -133,13 +140,16 @@ class FeedGenerator:
         self._width = 10
 
         start_as_of_date_param_str = cgi.get(Params.start_as_of_date.param_name)
-        self._startAsOfDate = datetime.datetime.strptime(start_as_of_date_param_str, Format.rfc3339.format_str)
         self._feedAsOfDate = datetime.datetime.now()
-        print(f'''test stdout {os.environ['QUERY_STRING']} {Params.date_override.param_name}''')
+        self._startAsOfDate = datetime.datetime.strptime(start_as_of_date_param_str, Format.rfc3339.format_str)
+        logging.debug(f'''test stdout {os.environ['QUERY_STRING']} {Params.date_override.param_name}''')
         if cgi.exists(Params.date_override.param_name):
             override_param_str = cgi.get(Params.date_override.param_name)
             self._feedAsOfDate = datetime.datetime.strptime(override_param_str, Format.rfc3339.format_str)
-            print(f'''date_override: {self._feedAsOfDate=}''')
+            logging.debug(f'''date_override: {self._feedAsOfDate=}''')
+        # "today", but 23:59:59
+        self._feedAsOfDate = self._feedAsOfDate.replace(hour=23, minute=59, second=59)
+        logging.debug(f'''{self._feedAsOfDate=} {self._startAsOfDate=}''')
         self._feedDaysSinceStartDelta = self._feedAsOfDate - self._startAsOfDate
         self._feedDateAfterOriginal = self._posts[0].publish_datetime + self._feedDaysSinceStartDelta
         pace = Pace.original.value
@@ -166,7 +176,7 @@ class FeedGenerator:
         assert self._feed_posts
         gen = AtomGenerator()
         gen.id('https://achewood.com/')
-        gen.title('Achewood, Reloaded')
+        gen.title('Achewood, Replayed')
         gen.author({'name': 'Chris Onstad'})
         gen.link(href='https://achewood.com/')
         for post in self._feed_posts:
@@ -177,5 +187,36 @@ class FeedGenerator:
             # entry.pubDate(post.publish_datetime)
         return gen.atom_str(pretty=True)
 
+    def go(self):
+        print('Content-Type: application/atom+xml\n\n')
+        print(self.atom)
+
+
+def config_logging():
+    logging.basicConfig(format='{asctime} {levelname:>7}: {msg}', style='{', level=logging.INFO, datefmt='%Y-%m-%dT%H:%M:%S')
+    logging.Formatter.converter = time.gmtime
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    logging.getLogger('').addHandler(ch)
+
 if __name__ == '__main__':
-    FeedGenerator().go()
+    config_logging()
+    if not cgi.exists(Params.start_as_of_date.param_name):
+        now_str = datetime.datetime.now().strftime('%Y-%m-%d')
+        print('Content-Type: text/html\n\n')
+        print(textwrap.dedent(f'''\
+        <html>
+        <body>
+        <h1>Achewood, Replayed</h1>
+        <form method=GET>
+           Start As Of Date: <input name="startAsOfDate" value="{now_str}"/><br/>
+           Pace: <select name="pace"><br/>
+             <option value="{Pace.original.value}">Original Pacing -- include pauses and gaps in the original feed</option>
+             <option value="{Pace.daily.value}">Daily Pacing -- ignore all pauses and gaps in the original feed; every day a new post.</option>
+           </select><br/>
+           <input type=submit />
+        </form>
+        </body>
+        </html>'''))
+    else:
+        FeedGenerator().go()

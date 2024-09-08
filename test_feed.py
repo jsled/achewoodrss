@@ -21,9 +21,20 @@ def test_FeedIndexReader():
     assert posts[2].url == '''https://achewood.com/2001/10/03/title.html'''
 
 
-def test_FeedGenerator(monkeypatch):
+def test_FeedGeneratorFirstDay(monkeypatch):
+    monkeypatch.setenv('QUERY_STRING', 'startAsOfDate=2024-09-07&__dateOverride=2024-09-07')
+    gen = FeedGenerator()
+    assert len(gen.feed_posts) == 1
+
+
+def test_FeedGeneratorSecondDay(monkeypatch):
+    monkeypatch.setenv('QUERY_STRING', 'startAsOfDate=2024-09-07&__dateOverride=2024-09-08')
+    gen = FeedGenerator()
+    assert len(gen.feed_posts) == 2
+
+
+def test_FeedGeneratorFourthDay(monkeypatch):
     monkeypatch.setenv('QUERY_STRING', 'startAsOfDate=2024-08-01&__dateOverride=2024-08-04')
     gen = FeedGenerator()
-    assert len(gen.feed_posts) == 3
-    assert repr(gen.atom) == ''
+    assert len(gen.feed_posts) == 4
 
