@@ -185,7 +185,9 @@ class FeedGenerator:
             entry.title(post.title)
             entry.link(href=post.url)
             # entry.pubDate(post.publish_datetime)
-        return gen.atom_str(pretty=True)
+        s = gen.atom_str(pretty=True)
+        return s.decode('utf-8')
+
 
     def go(self):
         print('Content-Type: application/atom+xml\n\n')
