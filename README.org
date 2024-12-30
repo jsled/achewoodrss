@@ -8,3 +8,22 @@ Generic, but setup currently for Achewood specifically.
 - https://github.com/mobeets/rss-replay?tab=readme-ov-file
   - "Goal: Play back older posts in an RSS feed. (Why? Assume you like reading blogs in your RSS reader, but you'd like to read older blog posts as well.)"
   - "First, check to make sure that archives of the feed are available, using [wayback machine]. Then, get a list of timestamps of archives using [[https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server][cdx]]."
+
+# re-create dreamhost-ed environment:
+
+#+begin_example
+scp feed.py asynchronous.org:asynchronous.org/feeds/achewood.py
+scp achewood.index requirements.txt asynchronous.org:asynchronous.org/feeds/
+
+ssh asynchronous.org <<EOF
+cd asynchronous.org/feeds
+python3 -m virtualenv v-achewood
+./v-achewood/bin/activate
+pip install -r requirements.txt
+EOF
+
+# edit hash-bang at top to be:
+  (v-achewood) jsled@iad1-shared-b7-32 [~/asynchronous.org/feeds]$ head achewood.py
+  #!/home/jsled/asynchronous.org/feeds/v-achewood/bin/python3
+
+#+end_example
