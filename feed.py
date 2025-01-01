@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #!/home/jsled/asynchronous.org/feeds/v-achewood/bin/python3
 
 from dataclasses import dataclass
@@ -213,11 +212,16 @@ if __name__ == '__main__':
         <form method=GET>
            Start As Of Date: <input name="startAsOfDate" value="{now_str}"/><br/>
            Pace: <select name="pace"><br/>
-             <option value="{Pace.original.value}">Original Pacing -- include pauses and gaps in the original feed</option>
-             <option value="{Pace.daily.value}">Daily Pacing -- ignore all pauses and gaps in the original feed; every day a new post.</option>
+             <option value="{Pace.original.value}">Original Pacing: include pauses and gaps in the original feed; replay it as originally posted.</option>
+             <option value="{Pace.daily.value}">Daily Pacing: ignore all pauses and gaps in the original feed; every day a new post.</option>
            </select><br/>
-           <input type=submit />
+           <input type=submit value="create that feed!"/>
         </form>
+
+
+        <hr/>
+
+        made with &hearts; by <a href="https://asynchronous.org/">jsled</a>
         </body>
         </html>'''))
     else:
