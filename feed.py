@@ -13,6 +13,8 @@ from urllib.parse import urlparse, parse_qs
 # TODO: add "days-since-original" and "percentage" to the feed body
 
 '''
+License: MIT
+
 return one of either:
 
 - an html page describing the parameters allowable to create a feed url
@@ -221,7 +223,7 @@ if __name__ == '__main__':
 
         <hr/>
 
-        made with &hearts; by <a href="https://asynchronous.org/">jsled</a>
+        made with &hearts; by <a href="https://asynchronous.org/">jsled</a> | <a href="https://github.com/jsled/achewoodrss">github.com/jsled/achewoodrss</a>
         </body>
         </html>'''))
     else:
